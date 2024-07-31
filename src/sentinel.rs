@@ -1,5 +1,7 @@
 use std::{fmt::Debug, thread::panicking};
 
+use crate::ErrorCollector;
+
 /// Represents errors which must be handled before this sentinel is dropped.
 /// 
 /// `ErrorSentinel` has a custom implementation of the [`Drop`] trait which checks that the errors
@@ -38,7 +40,7 @@ use std::{fmt::Debug, thread::panicking};
 /// [`handle`]: ErrorSentinel::handle
 /// [`unwrap`]: ErrorSentinel::unwrap
 /// [`expect`]: ErrorSentinel::expect
-/// [`propagate`]: ErrorSentinel::expect
+/// [`propagate`]: ErrorSentinel::propagate
 pub struct ErrorSentinel<E> {
     /// The list of errors produced. Wrapped in an [`Option`] to permit moving the errors out of 
     /// `self`.
@@ -108,6 +110,24 @@ impl<E> ErrorSentinel<E> {
 
         // Unwrap will not panic - this consumes `self` so it can't be called again
         handler(self.errors.take().unwrap())
+    }
+
+    /// Handles the errors by moving them into an [`ErrorCollector`], effectively postponing them to
+    /// be handled later instead.
+    /// 
+    /// ```
+    /// # use multierror::ErrorSentinel;
+    /// let source = ErrorSentinel::new(vec!["error 1", "error 2"]);
+    /// let mut dest = ErrorSentinel::new(vec!["error 3", "error 4", "error 5"]);
+    /// 
+    /// source.propagate(&mut dest);
+    /// assert_eq!(dest.peek().len(), 5);
+    /// # dest.ignore();
+    /// ```
+    pub fn propagate(self, other: &mut impl ErrorCollector<E>) {
+        for error in self.into_errors_iter() {
+            other.push_error(error);
+        }
     }
 
     /// Handles the errors by ignoring them, dropping the list of errors.
@@ -219,6 +239,12 @@ impl<E> Drop for ErrorSentinel<E> {
         if !panicking() && !self.handled {
             panic!("sentinel dropped without handling errors");
         }
+    }
+}
+
+impl<E> ErrorCollector<E> for ErrorSentinel<E> {
+    fn push_error(&mut self, error: E) {
+        self.errors.as_mut().unwrap().push(error);
     }
 }
 

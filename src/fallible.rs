@@ -1,4 +1,4 @@
-use crate::ErrorSentinel;
+use crate::{ErrorCollector, ErrorSentinel};
 
 /// Contains a value, plus possibly one or more errors produced by the procedures which obtained
 /// that value.
@@ -31,6 +31,29 @@ impl<T, E> Fallible<T, E> {
     /// ```
     pub fn push_error(&mut self, error: E) {
         self.errors.push(error);
+    }
+
+    /// Moves the errors from this `Fallible` into an [`ErrorCollector`], and unwraps it to return
+    /// its value.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let mut source = Fallible::new(42);
+    /// source.push_error("oh no!");
+    /// source.push_error("another error!");
+    /// let mut dest = Fallible::new(123);
+    /// source.push_error("one last failure!");
+    /// 
+    /// let source_value = source.propagate(&mut dest);
+    /// assert_eq!(dest.len_errors(), 3);
+    /// assert_eq!(source_value, 42);
+    /// ```
+    pub fn propagate(self, other: &mut impl ErrorCollector<E>) -> T {
+        for error in self.errors.into_iter() {
+            other.push_error(error);
+        }
+
+        self.value
     }
 
     /// Returns `true` if this `Fallible` has any errors.
@@ -87,5 +110,11 @@ impl<T, E> Fallible<T, E> {
     #[must_use]
     pub fn finalize(self) -> (T, ErrorSentinel<E>) {
         (self.value, ErrorSentinel::new(self.errors))
+    }
+}
+
+impl<T, E> ErrorCollector<E> for Fallible<T, E> {
+    fn push_error(&mut self, error: E) {
+        Fallible::push_error(self, error);
     }
 }
