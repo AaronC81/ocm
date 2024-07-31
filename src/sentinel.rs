@@ -67,7 +67,7 @@ impl<E> ErrorSentinel<E> {
     }
 
     /// Constructs a new unhandled `ErrorSentinel` without any errors.
-    pub fn new_empty() -> Self {
+    pub fn empty() -> Self {
         Self {
             errors: Some(vec![]),
             handled: false,
@@ -166,7 +166,7 @@ impl<E> ErrorSentinel<E> {
     /// /// Sum the integer values in a sequence of strings.
     /// /// Any non-integer values are returned as errors.
     /// pub fn sum_ints<'a>(input: &[&'a str]) -> Fallible<u32, &'a str> {
-    ///     let mut errors = ErrorSentinel::new_empty();
+    ///     let mut errors = ErrorSentinel::empty();
     ///     let mut sum = 0;
     /// 
     ///     for item in input {
@@ -239,7 +239,7 @@ impl<E> ErrorSentinel<E> {
     /// 
     /// ```
     /// # use multierror::ErrorSentinel;
-    /// let errors = ErrorSentinel::new_ok();
+    /// let errors = ErrorSentinel::ok();
     /// errors.unwrap(); // OK
     /// ```
     #[track_caller]
@@ -262,7 +262,7 @@ impl<E> ErrorSentinel<E> {
     /// 
     /// ```
     /// # use multierror::ErrorSentinel;
-    /// let errors = ErrorSentinel::new_ok();
+    /// let errors = ErrorSentinel::ok();
     /// errors.expect("something went wrong"); // OK
     /// ```
     #[track_caller]
@@ -279,7 +279,7 @@ impl<E> ErrorSentinel<E> {
 impl ErrorSentinel<!> {
     /// Constructs an `ErrorSentinel` which does not and will never contain errors, by using the
     /// never type [`!`] as the error type.
-    pub fn new_ok() -> Self {
+    pub fn ok() -> Self {
         Self {
             errors: Some(vec![]),
             handled: false,
@@ -296,7 +296,7 @@ impl ErrorSentinel<!> {
     /// 
     /// ```
     /// # use multierror::ErrorSentinel;
-    /// let errors = ErrorSentinel::new_ok();
+    /// let errors = ErrorSentinel::ok();
     /// errors.safely_ignore(); // Prevents panic
     /// ```
     pub fn safely_ignore(self) {
