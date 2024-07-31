@@ -52,16 +52,6 @@ pub struct ErrorSentinel<E> {
     handled: bool,
 }
 
-impl ErrorSentinel<!> {
-    /// Constructs an `ErrorSentinel` with no errors.
-    pub fn new_ok() -> Self {
-        Self {
-            errors: Some(vec![]),
-            handled: false,
-        }
-    }    
-}
-
 impl<E> ErrorSentinel<E> {
     /// Constructs a new unhandled `ErrorSentinel` with errors.
     /// 
@@ -230,6 +220,34 @@ impl<E> ErrorSentinel<E> {
         if !self.peek().is_empty() {
             panic!("{}", msg)
         }
+    }
+}
+
+impl ErrorSentinel<!> {
+    /// Constructs an `ErrorSentinel` which does not and will never contain errors, by using the
+    /// never type [`!`] as the error type.
+    pub fn new_ok() -> Self {
+        Self {
+            errors: Some(vec![]),
+            handled: false,
+        }
+    }
+
+    /// An alias for [`ignore`] which is only available when the error type is the never type [`!`].
+    /// 
+    /// In this case, an error can never occur, so it is safe to ignore errors. Using
+    /// `safely_ignore` instead of `ignore` will signal to readers that this is a safe assumption,
+    /// and will cause a compile error if the error type ever changes from `!`.
+    /// 
+    /// [`ignore`]: ErrorSentinel::ignore
+    /// 
+    /// ```
+    /// # use multierror::ErrorSentinel;
+    /// let errors = ErrorSentinel::new_ok();
+    /// errors.safely_ignore(); // Prevents panic
+    /// ```
+    pub fn safely_ignore(self) {
+        self.ignore()
     }
 }
 
