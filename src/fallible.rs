@@ -32,6 +32,42 @@ impl<T, E> Fallible<T, E> {
         Fallible { value, errors }
     }
     
+    /// A convenience function to construct a new `Fallible` by accumulating errors over time, and
+    /// finally returning some value.
+    /// 
+    /// ```
+    /// # use multierror::{Fallible, ErrorCollector};
+    /// fn sub_task() -> Fallible<u32, String> {
+    ///     Fallible::new_with_errors(
+    ///         42,
+    ///         vec!["struggled to compute meaning of life".to_owned()]
+    ///     )
+    /// }
+    /// 
+    /// let f = Fallible::build(|errs| {
+    ///     // Produce some errors of our own...
+    ///     errs.push_error("what are we doing?".to_owned());
+    /// 
+    ///     // ...or propagate errors from another `Fallible`
+    ///     let value = sub_task().propagate(errs);
+    /// 
+    ///     value + 1
+    /// });
+    /// 
+    /// let (value, errors) = f.finalize();
+    /// assert_eq!(value, 42 + 1);
+    /// assert_eq!(errors.len(), 2);
+    /// # errors.ignore();
+    /// ```
+    pub fn build<F>(func: F) -> Self
+    where
+        F: FnOnce(&mut ErrorSentinel<E>) -> T,
+    {
+        let mut sentinel = ErrorSentinel::empty();
+        let value = func(&mut sentinel);
+        sentinel.into_fallible(value)
+    }
+
     /// Adds a new error to this `Fallible`.
     /// 
     /// ```
