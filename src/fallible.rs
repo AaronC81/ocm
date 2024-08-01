@@ -2,6 +2,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 
 /// Contains a value, plus possibly one or more errors produced by the procedures which obtained
 /// that value.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Fallible<T, E> {
     value: T,
     errors: Vec<E>,
