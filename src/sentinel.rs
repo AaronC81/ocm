@@ -326,8 +326,14 @@ impl<E> Drop for ErrorSentinel<E> {
 }
 
 impl<E> ErrorCollector<E> for ErrorSentinel<E> {
+    type WrappedInner = ();
+
     fn push_error(&mut self, error: E) {
         self.errors.as_mut().unwrap().push(error);
+    }
+
+    fn propagate(self, other: &mut impl ErrorCollector<E>) -> Self::WrappedInner {
+        ErrorSentinel::propagate(self, other);
     }
 }
 

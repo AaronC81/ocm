@@ -31,7 +31,7 @@ impl<T, E> Fallible<T, E> {
     pub fn new_with_errors(value: T, errors: Vec<E>) -> Self {
         Fallible { value, errors }
     }
-
+    
     /// Adds a new error to this `Fallible`.
     /// 
     /// ```
@@ -214,8 +214,14 @@ impl<T, E> Fallible<T, E> {
 }
 
 impl<T, E> ErrorCollector<E> for Fallible<T, E> {
+    type WrappedInner = T;
+
     fn push_error(&mut self, error: E) {
         Fallible::push_error(self, error);
+    }
+
+    fn propagate(self, other: &mut impl ErrorCollector<E>) -> Self::WrappedInner {
+        Fallible::propagate(self, other)
     }
 }
 
