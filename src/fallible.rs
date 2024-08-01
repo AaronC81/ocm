@@ -21,6 +21,17 @@ impl<T, E> Fallible<T, E> {
         Fallible { value, errors: vec![] }
     }
 
+    /// Constructs a new `Fallible` with some errors.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let mut f = Fallible::new_with_errors(42, vec!["an error"]);
+    /// assert_eq!(f.len_errors(), 1);
+    /// ```
+    pub fn new_with_errors(value: T, errors: Vec<E>) -> Self {
+        Fallible { value, errors }
+    }
+
     /// Adds a new error to this `Fallible`.
     /// 
     /// ```
@@ -84,6 +95,47 @@ impl<T, E> Fallible<T, E> {
             other.push_error(error);
         }
     }
+    
+    /// Consumes this `Fallible` and another one, returning a new `Fallible` with their values as a
+    /// tuple `(this, other)` and the errors combined.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let a = Fallible::new_with_errors(5, vec!["error 1", "error 2"]);
+    /// let b = Fallible::new_with_errors(9, vec!["error 3"]);
+    /// 
+    /// let zipped = a.zip(b);
+    /// 
+    /// let (value, errors) = zipped.finalize();
+    /// assert_eq!(value, (5, 9));
+    /// assert_eq!(errors.len(), 3);
+    /// # errors.ignore();
+    /// ```
+    pub fn zip<OT>(self, other: Fallible<OT, E>) -> Fallible<(T, OT), E> {
+        Fallible::new_with_errors(
+            (self.value, other.value),
+            self.errors.into_iter().chain(other.errors).collect(),
+        )
+    }
+
+    /// Applies a function to the value within this `Fallible`.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let f = Fallible::new_with_errors("Hello".to_owned(), vec!["oh no!"]);
+    /// let f_rev = f.map(|s| s.len());
+    /// 
+    /// let (value, errors) = f_rev.finalize();
+    /// assert_eq!(value, 5);
+    /// assert_eq!(errors.len(), 1);
+    /// # errors.ignore();
+    /// ```
+    pub fn map<R>(self, func: impl FnOnce(T) -> R) -> Fallible<R, E> {
+        Fallible::new_with_errors(
+            func(self.value),
+            self.errors,
+        )
+    }
 
     /// Returns `true` if this `Fallible` has any errors.
     /// 
@@ -145,5 +197,39 @@ impl<T, E> Fallible<T, E> {
 impl<T, E> ErrorCollector<E> for Fallible<T, E> {
     fn push_error(&mut self, error: E) {
         Fallible::push_error(self, error);
+    }
+}
+
+impl<T, E, C: FromIterator<T>> FromIterator<Fallible<T, E>> for Fallible<C, E> {
+    /// Enables an [`Iterator`] of `Fallible` items to be converted into a single `Fallible` whose
+    /// item is a collection containing each of the items' values.
+    /// 
+    /// The errors are aggregated in order.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let items = vec![
+    ///     Fallible::new_with_errors(1, vec!["error 1", "error 2"]),
+    ///     Fallible::new_with_errors(2, vec!["error 3"]),
+    ///     Fallible::new_with_errors(3, vec!["error 4", "error 5"]),
+    /// ];
+    /// 
+    /// let combined: Fallible<Vec<u32>, _> = items.into_iter().collect();
+    /// 
+    /// let (value, errors) = combined.finalize();
+    /// assert_eq!(value, vec![1, 2, 3]);
+    /// assert_eq!(errors.len(), 5);
+    /// # errors.ignore();
+    /// ```
+    fn from_iter<I: IntoIterator<Item = Fallible<T, E>>>(iter: I) -> Self {
+        let mut items = vec![];
+        let mut errors = vec![];
+
+        for item in iter {
+            items.push(item.value);
+            errors.extend(item.errors);
+        }
+
+        Fallible::new_with_errors(items.into_iter().collect(), errors)
     }
 }
