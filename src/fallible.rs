@@ -43,7 +43,7 @@ impl<T, E> Fallible<T, E> {
     /// source.push_error("oh no!");
     /// source.push_error("another error!");
     /// let mut dest = Fallible::new(123);
-    /// source.push_error("one last failure!");
+    /// dest.push_error("one last failure!");
     /// 
     /// let source_value = source.propagate(&mut dest);
     /// assert_eq!(dest.len_errors(), 3);
@@ -55,6 +55,34 @@ impl<T, E> Fallible<T, E> {
         }
 
         self.value
+    }
+
+    /// Moves the errors from this `Fallible` into another `Fallible`, and apply a mapping function
+    /// to transform the value within that `Fallible` based on the value within this one.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let mut source = Fallible::new(42);
+    /// source.push_error("oh no!");
+    /// source.push_error("another error!");
+    /// let mut dest = Fallible::new(123);
+    /// dest.push_error("one last failure!");
+    /// 
+    /// // Integrate by adding the values
+    /// source.integrate(&mut dest, |acc, x| *acc += x);
+    /// 
+    /// // Check result
+    /// let (value, errors) = dest.finalize();
+    /// assert_eq!(value, 123 + 42);
+    /// assert_eq!(errors.len(), 3);
+    /// # errors.ignore();
+    /// ```
+    pub fn integrate<OT>(self, other: &mut Fallible<OT, E>, func: impl FnOnce(&mut OT, T)) {
+        func(&mut other.value, self.value);
+
+        for error in self.errors.into_iter() {
+            other.push_error(error);
+        }
     }
 
     /// Returns `true` if this `Fallible` has any errors.

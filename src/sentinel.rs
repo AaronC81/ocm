@@ -218,10 +218,22 @@ impl<E> ErrorSentinel<E> {
     /// # use multierror::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// assert_eq!(errors.peek(), &["error 1", "error 2"]);
-    /// errors.ignore(); // Prevent panic
+    /// errors.ignore(); // Without this, the sentinel would still panic
     /// ```
     pub fn peek(&self) -> &[E] {
         self.errors.as_ref().unwrap()
+    }
+
+    /// The number of errors within this `ErrorSentinel`.
+    /// 
+    /// ```
+    /// # use multierror::ErrorSentinel;
+    /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
+    /// assert_eq!(errors.len(), 2);
+    /// # errors.ignore();
+    /// ```
+    pub fn len(&self) -> usize {
+        self.errors.as_ref().unwrap().len()
     }
 
     /// Handles the errors by panicking if there are any errors.
