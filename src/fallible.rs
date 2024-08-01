@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{ErrorCollector, ErrorSentinel};
 
 /// Contains a value, plus possibly one or more errors produced by the procedures which obtained
@@ -27,7 +29,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 ///     let mut sum = 0;
 ///     for i in 0..10 {
 ///         if i % 3 == 0 {
-///             errs.push_error("don't like multiplies of 3");
+///             errs.push_error("don't like multiples of 3");
 ///         }
 ///         sum += i;
 ///     }
@@ -73,6 +75,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// - Unwrap a value by moving its errors elsewhere: [`propagate`]
 /// - Fold two values and combine their errors: [`integrate`]
 /// - Bundle values into a collection and combine their errors: [`zip`], [`from_iter`]
+/// - Extract the value by asserting there are no errors: [`unwrap`], [`expect`]
 /// 
 /// [`map`]: Fallible::map
 /// [`map_errors`]: Fallible::map_errors
@@ -80,6 +83,8 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// [`integrate`]: Fallible::integrate
 /// [`zip`]: Fallible::zip
 /// [`from_iter`]: Fallible::from_iter
+/// [`unwrap`]: Fallible::unwrap
+/// [`expect`]: Fallible::expect
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Fallible<T, E> {
     value: T,
@@ -275,6 +280,61 @@ impl<T, E> Fallible<T, E> {
             self.value,
             self.errors.into_iter().map(func).collect(),
         )
+    }
+
+    /// Extracts the inner value, panicking if there are any errors.
+    /// 
+    /// The panic message includes the [`Debug`] representation of the errors. If you would like
+    /// to provide a custom message instead, use [`expect`].
+    /// 
+    /// [`expect`]: Fallible::expect
+    /// 
+    /// ```should_panic
+    /// # use multierror::Fallible;
+    /// let f = Fallible::new_with_errors(42, vec!["error 1", "error 2"]);
+    /// f.unwrap(); // Panics
+    /// ```
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let f: Fallible<_, String> = Fallible::new(42);
+    /// let value = f.unwrap();
+    /// assert_eq!(value, 42);
+    /// ```
+    #[track_caller]
+    pub fn unwrap(self) -> T
+    where E : Debug
+    {
+        if self.is_success() {
+            self.value
+        } else {
+            panic!("called `unwrap` on a Fallible with errors: {:?}", self.errors)
+        }
+    }
+
+    /// Extracts the inner value, panicking with a message if there are any errors.
+    /// 
+    /// ```should_panic
+    /// # use multierror::Fallible;
+    /// let f = Fallible::new_with_errors(42, vec!["error 1", "error 2"]);
+    /// f.expect("something went wrong"); // Panics
+    /// ```
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let f: Fallible<_, String> = Fallible::new(42);
+    /// let value = f.expect("something went wrong");
+    /// assert_eq!(value, 42);
+    /// ```
+    #[track_caller]
+    pub fn expect(mut self, msg: &str) -> T
+    where E : Debug
+    {
+        if self.is_success() {
+            self.value
+        } else {
+            panic!("{msg}")
+        }
     }
 
     /// Returns `true` if this `Fallible` has any errors.
