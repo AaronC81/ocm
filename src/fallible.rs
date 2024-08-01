@@ -137,6 +137,25 @@ impl<T, E> Fallible<T, E> {
         )
     }
 
+    /// Applies a function to the errors within this `Fallible`.
+    /// 
+    /// ```
+    /// # use multierror::Fallible;
+    /// let f = Fallible::new_with_errors(42, vec!["oh no!", "something went wrong"]);
+    /// let f_mapped = f.map_errors(|e| e.to_uppercase());
+    /// 
+    /// let (value, errors) = f_mapped.finalize();
+    /// assert_eq!(value, 42);
+    /// assert_eq!(errors.peek(), &["OH NO!".to_owned(), "SOMETHING WENT WRONG".to_owned()]);
+    /// # errors.ignore();
+    /// ```
+    pub fn map_errors<R>(self, func: impl FnMut(E) -> R) -> Fallible<T, R> {
+        Fallible::new_with_errors(
+            self.value,
+            self.errors.into_iter().map(func).collect(),
+        )
+    }
+
     /// Returns `true` if this `Fallible` has any errors.
     /// 
     /// Opposite of [`is_success`](#method.is_success).
