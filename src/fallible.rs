@@ -2,6 +2,84 @@ use crate::{ErrorCollector, ErrorSentinel};
 
 /// Contains a value, plus possibly one or more errors produced by the procedures which obtained
 /// that value.
+/// 
+/// # Creation
+/// 
+/// Instances of `Fallible` can be created in a number of different ways, depending on what you
+/// are trying to achieve, and how you are producing errors.#
+/// 
+/// Use [`new_with_errors`] to construct "raw" from an existing value and list of errors:
+/// 
+/// [`new_with_errors`]: Fallible::new_with_errors
+/// 
+/// ```
+/// # use multierror::Fallible;
+/// Fallible::new_with_errors(42, vec!["something that went wrong"]);
+/// ```
+/// 
+/// Use [`build`] to compute a value while accumulating errors:
+/// 
+/// [`build`]: Fallible::build
+/// 
+/// ```
+/// # use multierror::{Fallible, ErrorCollector};
+/// Fallible::build(|errs| {
+///     let mut sum = 0;
+///     for i in 0..10 {
+///         if i % 3 == 0 {
+///             errs.push_error("don't like multiplies of 3");
+///         }
+///         sum += i;
+///     }
+/// });
+/// ```
+/// 
+/// # Finalization
+/// 
+/// If you have a `Fallible` and need to get the value and errors out, call [`finalize`]. This gives
+/// both the inner value and an [`ErrorSentinel`], a special type which **ensures** that the errors
+/// are handled in some way before it is dropped. If the errors are unhandled, it will cause a panic
+/// to alert you to your logic error. See the documentation for [`ErrorSentinel`] for details.
+/// 
+/// [`finalize`]: Fallible::finalize
+/// 
+/// ```
+/// # use multierror::Fallible;
+/// fn something() -> Fallible<u32, String> {
+///     // ...
+///     # Fallible::new(0)
+/// }
+/// 
+/// let f = something();
+/// let (value, errors) = f.finalize();
+/// 
+/// println!("value is {value}");
+/// 
+/// // This iteration counts as handling the error, as per the `ErrorSentinel::into_errors_iter` docs.
+/// // If we didn't handle the errors, using this method or some other one, our program would panic
+/// // when `errors` was dropped.
+/// for err in errors.into_errors_iter() {
+///     println!("error: {err}");
+/// }
+/// ```
+/// 
+/// # Combination
+/// 
+/// `Fallible` provides some functional combinators to transform and combine instances together.
+/// These are useful for modularizing complex pieces of functionality which could all produce errors
+/// individually, but which you will need to collect together later.
+/// 
+/// - Transform values and/or errors: [`map`], [`map_errors`]
+/// - Unwrap a value by moving its errors elsewhere: [`propagate`]
+/// - Fold two values and combine their errors: [`integrate`]
+/// - Bundle values into a collection and combine their errors: [`zip`], [`from_iter`]
+/// 
+/// [`map`]: Fallible::map
+/// [`map_errors`]: Fallible::map_errors
+/// [`propagate`]: Fallible::propagate
+/// [`integrate`]: Fallible::integrate
+/// [`zip`]: Fallible::zip
+/// [`from_iter`]: Fallible::from_iter
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Fallible<T, E> {
     value: T,
@@ -17,6 +95,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(f.len_errors(), 0);
     /// # f.push_error(0); // resolve type
     /// ```
+    #[must_use]
     pub fn new(value: T) -> Self {
         Fallible { value, errors: vec![] }
     }
@@ -28,6 +107,7 @@ impl<T, E> Fallible<T, E> {
     /// let mut f = Fallible::new_with_errors(42, vec!["an error"]);
     /// assert_eq!(f.len_errors(), 1);
     /// ```
+    #[must_use]
     pub fn new_with_errors(value: T, errors: Vec<E>) -> Self {
         Fallible { value, errors }
     }
@@ -59,6 +139,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(errors.len(), 2);
     /// # errors.ignore();
     /// ```
+    #[must_use]
     pub fn build<F>(func: F) -> Self
     where
         F: FnOnce(&mut ErrorSentinel<E>) -> T,
@@ -96,6 +177,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(dest.len_errors(), 3);
     /// assert_eq!(source_value, 42);
     /// ```
+    #[must_use = "propagate returns the inner value; use `integrate` if you wish to merge values in-place"]
     pub fn propagate(self, other: &mut impl ErrorCollector<E>) -> T {
         for error in self.errors.into_iter() {
             other.push_error(error);
@@ -147,6 +229,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(errors.len(), 3);
     /// # errors.ignore();
     /// ```
+    #[must_use]
     pub fn zip<OT>(self, other: Fallible<OT, E>) -> Fallible<(T, OT), E> {
         Fallible::new_with_errors(
             (self.value, other.value),
@@ -166,6 +249,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(errors.len(), 1);
     /// # errors.ignore();
     /// ```
+    #[must_use]
     pub fn map<R>(self, func: impl FnOnce(T) -> R) -> Fallible<R, E> {
         Fallible::new_with_errors(
             func(self.value),
@@ -185,6 +269,7 @@ impl<T, E> Fallible<T, E> {
     /// assert_eq!(errors.peek(), &["OH NO!".to_owned(), "SOMETHING WENT WRONG".to_owned()]);
     /// # errors.ignore();
     /// ```
+    #[must_use]
     pub fn map_errors<R>(self, func: impl FnMut(E) -> R) -> Fallible<T, R> {
         Fallible::new_with_errors(
             self.value,
@@ -195,6 +280,7 @@ impl<T, E> Fallible<T, E> {
     /// Returns `true` if this `Fallible` has any errors.
     /// 
     /// Opposite of [`is_success`](#method.is_success).
+    #[must_use]
     pub fn has_errors(&self) -> bool {
         self.len_errors() > 0
     }
@@ -202,6 +288,7 @@ impl<T, E> Fallible<T, E> {
     /// Returns `true` if this `Fallible` has no errors.
     /// 
     /// Opposite of [`has_errors`](#method.has_errors).
+    #[must_use]
     pub fn is_success(&self) -> bool {
         self.len_errors() == 0
     }
@@ -216,6 +303,7 @@ impl<T, E> Fallible<T, E> {
     /// 
     /// assert_eq!(f.len_errors(), 2);
     /// ```
+    #[must_use]
     pub fn len_errors(&self) -> usize {
         self.errors.len()
     }
