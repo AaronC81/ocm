@@ -161,6 +161,8 @@ impl<E> ErrorSentinel<E> {
     /// finally creating an `Outcome` to return with a calculated value. Using an `ErrorSentinel`
     /// to accumulate the errors ensures that you cannot forget to return them.
     /// 
+    /// See also [`Outcome::build`], which provides a closure-based helper for the same pattern.
+    /// 
     /// ```
     /// # use multierror::{ErrorSentinel, Outcome, ErrorCollector};
     /// /// Sum the integer values in a sequence of strings.
@@ -234,6 +236,12 @@ impl<E> ErrorSentinel<E> {
     /// ```
     pub fn len(&self) -> usize {
         self.errors.as_ref().unwrap().len()
+    }
+
+    /// Returns `true` if this `ErrorSentinel` has any errors.
+    #[must_use]
+    pub fn any(&self) -> bool {
+        self.len() > 0
     }
 
     /// Handles the errors by panicking if there are any errors.
