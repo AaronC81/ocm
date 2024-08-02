@@ -1,5 +1,7 @@
 #![feature(never_type)]
 
+#[doc = include_str!("../README.md")]
+
 mod outcome;
 pub use outcome::*;
 
