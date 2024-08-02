@@ -1,7 +1,7 @@
 #![feature(never_type)]
 
-mod fallible;
-pub use fallible::*;
+mod outcome;
+pub use outcome::*;
 
 mod sentinel;
 pub use sentinel::*;

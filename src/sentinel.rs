@@ -1,6 +1,6 @@
 use std::{fmt::Debug, thread::panicking};
 
-use crate::{ErrorCollector, Fallible};
+use crate::{ErrorCollector, Outcome};
 
 /// Represents errors which must be handled before this sentinel is dropped.
 /// 
@@ -56,9 +56,9 @@ impl<E> ErrorSentinel<E> {
     /// Constructs a new unhandled `ErrorSentinel` with errors.
     /// 
     /// Usually this is not needed to be called manually, and an `ErrorSentinel` will be created by
-    /// [`Fallible::finalize`] instead.
+    /// [`Outcome::finalize`] instead.
     /// 
-    /// [`Fallible::finalize`]: crate::Fallible::finalize
+    /// [`Outcome::finalize`]: crate::Outcome::finalize
     pub fn new(errors: Vec<E>) -> Self {
         Self {
             errors: Some(errors),
@@ -147,25 +147,25 @@ impl<E> ErrorSentinel<E> {
         self.handled = true;
     }
 
-    /// Handles the errors by moving them into a new [`Fallible`] with a given value.
+    /// Handles the errors by moving them into a new [`Outcome`] with a given value.
     /// 
     /// ```
     /// # use multierror::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2", "error 3"]);
-    /// let fallible = errors.into_fallible(42);
+    /// let outcome = errors.into_outcome(42);
     /// 
-    /// assert_eq!(fallible.len_errors(), 3);
+    /// assert_eq!(outcome.len_errors(), 3);
     /// ```
     /// 
     /// This can be useful for performing some logic which accumulates errors over time, and then
-    /// finally creating a `Fallible` to return with a calculated value. Using an `ErrorSentinel`
+    /// finally creating an `Outcome` to return with a calculated value. Using an `ErrorSentinel`
     /// to accumulate the errors ensures that you cannot forget to return them.
     /// 
     /// ```
-    /// # use multierror::{ErrorSentinel, Fallible, ErrorCollector};
+    /// # use multierror::{ErrorSentinel, Outcome, ErrorCollector};
     /// /// Sum the integer values in a sequence of strings.
     /// /// Any non-integer values are returned as errors.
-    /// pub fn sum_ints<'a>(input: &[&'a str]) -> Fallible<u32, &'a str> {
+    /// pub fn sum_ints<'a>(input: &[&'a str]) -> Outcome<u32, &'a str> {
     ///     let mut errors = ErrorSentinel::empty();
     ///     let mut sum = 0;
     /// 
@@ -176,7 +176,7 @@ impl<E> ErrorSentinel<E> {
     ///         }
     ///     }
     /// 
-    ///     errors.into_fallible(sum)
+    ///     errors.into_outcome(sum)
     /// }
     /// 
     /// let result = sum_ints(&["12", "a", "5", "b", "c", "2"]);
@@ -186,8 +186,8 @@ impl<E> ErrorSentinel<E> {
     /// assert_eq!(errors.peek(), &["a", "b", "c"]);
     /// # errors.ignore();
     /// ```
-    pub fn into_fallible<T>(self, value: T) -> Fallible<T, E> {
-        let mut f = Fallible::new(value);
+    pub fn into_outcome<T>(self, value: T) -> Outcome<T, E> {
+        let mut f = Outcome::new(value);
         self.propagate(&mut f);
         f
     }
