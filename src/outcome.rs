@@ -340,6 +340,32 @@ impl<T, E> Outcome<T, E> {
         }
     }
 
+    /// Converts this `Outcome` into a [`Result`]:
+    /// 
+    /// - If there are no errors, produces an [`Ok`] with the value.
+    /// - Otherwise, produces an [`Err`] with an [`ErrorSentinel`], discarding the value. This means
+    ///   you **must** handle the errors before they are dropped, as with [`finalize`].
+    /// 
+    /// [`finalize`]: Outcome::finalize
+    #[must_use = "if there are errors, discarding the `Result` will panic immediately"]
+    pub fn into_result(self) -> Result<T, ErrorSentinel<E>> {
+        if self.is_success() {
+            Ok(self.value)
+        } else {
+            Err(self.into_errors())
+        }
+    }
+
+    /// Converts this `Outcome` into an [`ErrorSentinel`], discarding the value.
+    /// 
+    /// You **must** handle the errors before they are dropped, as with [`finalize`].
+    /// 
+    /// [`finalize`]: Outcome::finalize
+    #[must_use = "discarding the `ErrorSentinel` will panic immediately"]
+    pub fn into_errors(self) -> ErrorSentinel<E> {
+        ErrorSentinel::new(self.errors)
+    }
+
     /// Returns `true` if this `Outcome` has any errors.
     /// 
     /// Opposite of [`is_success`](#method.is_success).
@@ -394,7 +420,7 @@ impl<T, E> Outcome<T, E> {
     ///     assert_eq!(errs.len(), 1);
     /// });
     /// ```
-    #[must_use]
+    #[must_use = "discarding the `ErrorSentinel` will panic immediately"]
     pub fn finalize(self) -> (T, ErrorSentinel<E>) {
         (self.value, ErrorSentinel::new(self.errors))
     }
