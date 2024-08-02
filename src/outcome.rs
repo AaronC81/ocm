@@ -330,7 +330,7 @@ impl<T, E> Outcome<T, E> {
     /// assert_eq!(value, 42);
     /// ```
     #[track_caller]
-    pub fn expect(mut self, msg: &str) -> T
+    pub fn expect(self, msg: &str) -> T
     where E : Debug
     {
         if self.is_success() {
