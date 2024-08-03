@@ -11,7 +11,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// # Creation
 /// 
 /// Instances of `Outcome` can be created in a number of different ways, depending on what you
-/// are trying to achieve, and how you are producing errors.#
+/// are trying to achieve, and how you are producing errors.
 /// 
 /// Use [`new_with_errors`] to construct "raw" from an existing value and list of errors:
 /// 
@@ -36,6 +36,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 ///         }
 ///         sum += i;
 ///     }
+///     sum
 /// });
 /// ```
 /// 
@@ -60,9 +61,9 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// 
 /// println!("value is {value}");
 /// 
-/// // This iteration counts as handling the error, as per the `ErrorSentinel::into_errors_iter` docs.
-/// // If we didn't handle the errors, using this method or some other one, our program would panic
-/// // when `errors` was dropped.
+/// // This iteration counts as handling the error, as per the `ErrorSentinel::into_errors_iter`
+/// // docs. If we didn't handle the errors, using this method or some other one, our program
+/// // would panic when `errors` was dropped.
 /// for err in errors.into_errors_iter() {
 ///     println!("error: {err}");
 /// }
