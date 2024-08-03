@@ -41,6 +41,12 @@ use crate::{ErrorCollector, Outcome};
 /// [`unwrap`]: ErrorSentinel::unwrap
 /// [`expect`]: ErrorSentinel::expect
 /// [`propagate`]: ErrorSentinel::propagate
+/// 
+/// In addition, an `ErrorSentinel` can be used as a generic container to accumulate errors during
+/// an operation, which can then be returned as an [`Outcome`]. See [`into_outcome`] and
+/// [`Outcome::build`].
+/// 
+/// [`into_outcome`]: ErrorSentinel::into_outcome
 pub struct ErrorSentinel<E> {
     /// The list of errors produced. Wrapped in an [`Option`] to permit moving the errors out of 
     /// `self`.
