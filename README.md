@@ -1,13 +1,13 @@
-# multierror
+# ocm
 
-The `multierror` crate provides `Outcome<T, E>`, an ergonomic type to model operations which can
+The `ocm` crate provides `Outcome<T, E>`, an ergonomic type to model operations which can
 produce several errors while always returning some value.
 
 This is useful for operations like parsing, where you'd like to gather as many errors as possible
 before failing.
 
 ```rust
-use multierror::{Outcome, ErrorCollector};
+use ocm::{Outcome, ErrorCollector};
 
 // Some operation which always returns a value, but may produce errors while doing so
 pub fn sum_ints<'a>(input: &[&'a str]) -> Outcome<u32, String> {
@@ -48,7 +48,7 @@ instead it is done at runtime, using panics to signal that errors were dropped w
 handled:
 
 ```rust,should_panic
-use multierror::Outcome;
+use ocm::Outcome;
 
 let outcome = Outcome::new_with_errors(42, vec!["error 1", "error 2"]);
 let (value, errors) = outcome.finalize();

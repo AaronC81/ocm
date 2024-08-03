@@ -8,7 +8,7 @@ use crate::{ErrorCollector, Outcome};
 /// were handled in some way, and panics if not.
 /// 
 /// ```should_panic
-/// # use multierror::ErrorSentinel;
+/// # use ocm::ErrorSentinel;
 /// {
 ///     let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
 ///     // Panic occurs here!
@@ -18,7 +18,7 @@ use crate::{ErrorCollector, Outcome};
 /// Using a method which marks the errors as handled will suppress the panic:
 /// 
 /// ```
-/// # use multierror::ErrorSentinel;
+/// # use ocm::ErrorSentinel;
 /// {
 ///     let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
 ///     errors.handle(|errs| {
@@ -83,7 +83,7 @@ impl<E> ErrorSentinel<E> {
     /// Handles the errors by executing a closure, returning the value which it evaluates to.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2", "error 3"]);
     /// 
     /// let mut error_count = 0;
@@ -105,7 +105,7 @@ impl<E> ErrorSentinel<E> {
     /// errors:
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// # let errors = ErrorSentinel::new(vec!["error 1"]);
     /// errors.handle(|_| ());
     /// ```
@@ -120,7 +120,7 @@ impl<E> ErrorSentinel<E> {
     /// be handled later instead.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let source = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// let mut dest = ErrorSentinel::new(vec!["error 3", "error 4", "error 5"]);
     /// 
@@ -137,7 +137,7 @@ impl<E> ErrorSentinel<E> {
     /// Handles the errors by ignoring them, dropping the list of errors.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2", "error 3"]);
     /// errors.ignore();
     /// ```
@@ -156,7 +156,7 @@ impl<E> ErrorSentinel<E> {
     /// Handles the errors by moving them into a new [`Outcome`] with a given value.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2", "error 3"]);
     /// let outcome = errors.into_outcome(42);
     /// 
@@ -170,7 +170,7 @@ impl<E> ErrorSentinel<E> {
     /// See also [`Outcome::build`], which provides a closure-based helper for the same pattern.
     /// 
     /// ```
-    /// # use multierror::{ErrorSentinel, Outcome, ErrorCollector};
+    /// # use ocm::{ErrorSentinel, Outcome, ErrorCollector};
     /// /// Sum the integer values in a sequence of strings.
     /// /// Any non-integer values are returned as errors.
     /// pub fn sum_ints<'a>(input: &[&'a str]) -> Outcome<u32, &'a str> {
@@ -223,7 +223,7 @@ impl<E> ErrorSentinel<E> {
     /// Inspect the list of errors, without considering them handled.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// assert_eq!(errors.peek(), &["error 1", "error 2"]);
     /// errors.ignore(); // Without this, the sentinel would still panic
@@ -235,7 +235,7 @@ impl<E> ErrorSentinel<E> {
     /// The number of errors within this `ErrorSentinel`.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// assert_eq!(errors.len(), 2);
     /// # errors.ignore();
@@ -258,13 +258,13 @@ impl<E> ErrorSentinel<E> {
     /// [`expect`]: ErrorSentinel::expect
     /// 
     /// ```should_panic
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// errors.unwrap(); // Panics
     /// ```
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::ok();
     /// errors.unwrap(); // OK
     /// ```
@@ -281,13 +281,13 @@ impl<E> ErrorSentinel<E> {
     /// Handles the errors by panicking with a message if there are any errors.
     /// 
     /// ```should_panic
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
     /// errors.expect("something went wrong"); // Panics
     /// ```
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::ok();
     /// errors.expect("something went wrong"); // OK
     /// ```
@@ -321,7 +321,7 @@ impl ErrorSentinel<!> {
     /// [`ignore`]: ErrorSentinel::ignore
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let errors = ErrorSentinel::ok();
     /// errors.safely_ignore(); // Prevents panic
     /// ```
@@ -362,7 +362,7 @@ impl<E> ErrorCollector<E> for ErrorSentinel<E> {
 /// to do this is with a `for` loop:
 /// 
 /// ```
-/// # use multierror::ErrorSentinel;
+/// # use ocm::ErrorSentinel;
 /// let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
 /// for error in errors.into_errors_iter() {
 ///     println!("error: {error}");
@@ -372,7 +372,7 @@ impl<E> ErrorCollector<E> for ErrorSentinel<E> {
 /// If the loop breaks early, then not all errors may have been handled, causing a panic:
 /// 
 /// ```should_panic
-/// # use multierror::ErrorSentinel;
+/// # use ocm::ErrorSentinel;
 /// {
 ///     let errors = ErrorSentinel::new(vec!["error 1", "error 2"]);
 ///     for error in errors.into_errors_iter() {
@@ -391,7 +391,7 @@ impl<E> ErrorSentinelIter<E> {
     /// Whether the iterator is exhausted, and all errors have been handled.
     /// 
     /// ```
-    /// # use multierror::ErrorSentinel;
+    /// # use ocm::ErrorSentinel;
     /// let mut error_iter = ErrorSentinel::new(vec!["error 1", "error 2"]).into_errors_iter();
     /// 
     /// assert!(!error_iter.is_handled());

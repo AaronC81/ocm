@@ -18,7 +18,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// [`new_with_errors`]: Outcome::new_with_errors
 /// 
 /// ```
-/// # use multierror::Outcome;
+/// # use ocm::Outcome;
 /// Outcome::new_with_errors(42, vec!["something that went wrong"]);
 /// ```
 /// 
@@ -27,7 +27,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// [`build`]: Outcome::build
 /// 
 /// ```
-/// # use multierror::{Outcome, ErrorCollector};
+/// # use ocm::{Outcome, ErrorCollector};
 /// Outcome::build(|errs| {
 ///     let mut sum = 0;
 ///     for i in 0..10 {
@@ -50,7 +50,7 @@ use crate::{ErrorCollector, ErrorSentinel};
 /// [`finalize`]: Outcome::finalize
 /// 
 /// ```
-/// # use multierror::Outcome;
+/// # use ocm::Outcome;
 /// fn something() -> Outcome<u32, String> {
 ///     // ...
 ///     # Outcome::new(0)
@@ -99,7 +99,7 @@ impl<T, E> Outcome<T, E> {
     /// Constructs a new `Outcome` with a value and no errors.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut o = Outcome::new(42);
     /// assert_eq!(o.len_errors(), 0);
     /// # o.push_error(0); // resolve type
@@ -112,7 +112,7 @@ impl<T, E> Outcome<T, E> {
     /// Constructs a new `Outcome` with some errors.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut o = Outcome::new_with_errors(42, vec!["an error"]);
     /// assert_eq!(o.len_errors(), 1);
     /// ```
@@ -125,7 +125,7 @@ impl<T, E> Outcome<T, E> {
     /// finally returning some value.
     /// 
     /// ```
-    /// # use multierror::{Outcome, ErrorCollector};
+    /// # use ocm::{Outcome, ErrorCollector};
     /// fn sub_task() -> Outcome<u32, String> {
     ///     Outcome::new_with_errors(
     ///         42,
@@ -161,7 +161,7 @@ impl<T, E> Outcome<T, E> {
     /// Adds a new error to this `Outcome`.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut o = Outcome::new(42);
     /// o.push_error("oh no!");
     /// 
@@ -175,7 +175,7 @@ impl<T, E> Outcome<T, E> {
     /// its value.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut source = Outcome::new(42);
     /// source.push_error("oh no!");
     /// source.push_error("another error!");
@@ -199,7 +199,7 @@ impl<T, E> Outcome<T, E> {
     /// to transform the value within that `Outcome` based on the value within this one.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut source = Outcome::new(42);
     /// source.push_error("oh no!");
     /// source.push_error("another error!");
@@ -227,7 +227,7 @@ impl<T, E> Outcome<T, E> {
     /// tuple `(this, other)` and the errors combined.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let a = Outcome::new_with_errors(5, vec!["error 1", "error 2"]);
     /// let b = Outcome::new_with_errors(9, vec!["error 3"]);
     /// 
@@ -249,7 +249,7 @@ impl<T, E> Outcome<T, E> {
     /// Applies a function to the value within this `Outcome`.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o = Outcome::new_with_errors("Hello".to_owned(), vec!["oh no!"]);
     /// let o_rev = o.map(|s| s.len());
     /// 
@@ -269,7 +269,7 @@ impl<T, E> Outcome<T, E> {
     /// Applies a function to the errors within this `Outcome`.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o = Outcome::new_with_errors(42, vec!["oh no!", "something went wrong"]);
     /// let o_mapped = o.map_errors(|e| e.to_uppercase());
     /// 
@@ -294,13 +294,13 @@ impl<T, E> Outcome<T, E> {
     /// [`expect`]: Outcome::expect
     /// 
     /// ```should_panic
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o = Outcome::new_with_errors(42, vec!["error 1", "error 2"]);
     /// o.unwrap(); // Panics
     /// ```
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o: Outcome<_, String> = Outcome::new(42);
     /// let value = o.unwrap();
     /// assert_eq!(value, 42);
@@ -319,13 +319,13 @@ impl<T, E> Outcome<T, E> {
     /// Extracts the inner value, panicking with a message if there are any errors.
     /// 
     /// ```should_panic
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o = Outcome::new_with_errors(42, vec!["error 1", "error 2"]);
     /// o.expect("something went wrong"); // Panics
     /// ```
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let o: Outcome<_, String> = Outcome::new(42);
     /// let value = o.expect("something went wrong");
     /// assert_eq!(value, 42);
@@ -386,7 +386,7 @@ impl<T, E> Outcome<T, E> {
     /// The number of errors within this `Outcome`.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut o = Outcome::new(42);
     /// o.push_error("this went wrong");
     /// o.push_error("that went wrong");
@@ -407,7 +407,7 @@ impl<T, E> Outcome<T, E> {
     /// [`handle`]: ErrorSentinel::handle
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let mut o = Outcome::new(42);
     /// o.push_error("this went wrong");
     ///
@@ -446,7 +446,7 @@ impl<T, E, C: FromIterator<T>> FromIterator<Outcome<T, E>> for Outcome<C, E> {
     /// The errors are aggregated in order.
     /// 
     /// ```
-    /// # use multierror::Outcome;
+    /// # use ocm::Outcome;
     /// let items = vec![
     ///     Outcome::new_with_errors(1, vec!["error 1", "error 2"]),
     ///     Outcome::new_with_errors(2, vec!["error 3"]),
